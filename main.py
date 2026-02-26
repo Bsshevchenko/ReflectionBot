@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from database.connection import init_db
 from bot.handlers import commands, entries
+from bot.middlewares.auth import AllowedUsersMiddleware
 from bot.scheduler import setup_scheduler
 
 load_dotenv()
@@ -25,6 +26,8 @@ async def main() -> None:
 
     bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
+
+    dp.update.middleware(AllowedUsersMiddleware())
 
     dp.include_router(commands.router)
     dp.include_router(entries.router)
