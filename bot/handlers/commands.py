@@ -1,3 +1,5 @@
+import re
+
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
@@ -70,10 +72,10 @@ async def _send_report(message: Message, report: str) -> None:
         try:
             await message.answer(text, parse_mode="HTML")
         except Exception:
-            # Если HTML битый — отправить как plain text
-            await message.answer(text.replace("<b>", "").replace("</b>", "")
-                                     .replace("<i>", "").replace("</i>", "")
-                                     .replace("<blockquote>", "").replace("</blockquote>", ""))
+            try:
+                await message.answer(re.sub(r"<[^>]+>", "", text))
+            except Exception:
+                pass
 
 
 def _split_text(text: str, max_len: int) -> list[str]:
