@@ -50,9 +50,43 @@ async def cmd_report(message: Message) -> None:
 
     try:
         report = await generate_weekly_report(entries)
-        await message.answer(f"📊 <b>Твой недельный отчёт:</b>\n\n{report}", parse_mode="HTML")
+        await _send_report(message, report)
     except Exception as e:
         await message.answer(
             "❌ Не удалось сгенерировать отчёт. Попробуй позже."
         )
         raise
+
+
+MAX_MSG_LEN = 4000
+
+
+async def _send_report(message: Message, report: str) -> None:
+    header = "📊 <b>Твой недельный отчёт:</b>\n\n"
+    chunks = _split_text(report, MAX_MSG_LEN - len(header))
+
+    for i, chunk in enumerate(chunks):
+        text = (header + chunk) if i == 0 else chunk
+        try:
+            await message.answer(text, parse_mode="HTML")
+        except Exception:
+            # Если HTML битый — отправить как plain text
+            await message.answer(text.replace("<b>", "").replace("</b>", "")
+                                     .replace("<i>", "").replace("</i>", "")
+                                     .replace("<blockquote>", "").replace("</blockquote>", ""))
+
+
+def _split_text(text: str, max_len: int) -> list[str]:
+    if len(text) <= max_len:
+        return [text]
+    chunks = []
+    while text:
+        if len(text) <= max_len:
+            chunks.append(text)
+            break
+        split_at = text.rfind("\n", 0, max_len)
+        if split_at == -1:
+            split_at = max_len
+        chunks.append(text[:split_at])
+        text = text[split_at:].lstrip("\n")
+    return chunks
